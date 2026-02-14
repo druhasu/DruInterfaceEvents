@@ -1,0 +1,30 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.0",
+	"FriendlyName": "DruInterfaceEventsTests",
+	"Description": "Tests for DruInterfaceEvents",
+	"Category": "Testing",
+	"CreatedBy": "Andrei Sudarikov",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "DruInterfaceEventsTests",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "DruInterfaceEvents",
+			"Enabled": true
+		}
+	]	
+}
