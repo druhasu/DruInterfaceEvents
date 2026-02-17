@@ -26,8 +26,7 @@ void UK2Node_InterfaceEventAdd::AllocateDefaultPins()
 FText UK2Node_InterfaceEventAdd::GetNodeTitleForCache(ENodeTitleType::Type TitleType) const
 {
     const FEventEntry* FoundEntry = GetEventEntry();
-    if (FoundEntry == nullptr)
-        return FText::GetEmpty();
+    FText EventDisplayName = FoundEntry != nullptr ? FoundEntry->EventDisplayName : INVTEXT("<Unknown>");
 
-    return FText::Format(INVTEXT("Bind Event to {0}"), FoundEntry->EventDisplayName);
+    return FText::Format(INVTEXT("Bind Event to {0}"), EventDisplayName);
 }

@@ -24,4 +24,8 @@ public:
     UFUNCTION(BlueprintPure, CustomThunk, meta = (CustomStructureParam = "InEvent", BlueprintInternalUseOnly = "true"))
     static void UnpackDelegate(int32 InEvent, UObject*& OutObject, FName& OutFunctionName) { checkNoEntry(); }
     DECLARE_FUNCTION(execUnpackDelegate);
+
+private:
+    static FMulticastScriptDelegate* GetDelegateInstance(UObject* InEventOwner, FName InEventId);
+    static void RaiseScriptError(const FString& InError);
 };

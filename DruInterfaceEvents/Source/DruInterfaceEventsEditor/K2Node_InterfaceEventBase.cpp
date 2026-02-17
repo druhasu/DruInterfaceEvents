@@ -12,6 +12,12 @@
 #include "K2Node_Self.h"
 #include "KismetCompiler.h"
 
+namespace
+{
+    static const FName TargetPinName = FName("Target");
+    static const FName EventPinName = FName("Event");
+}
+
 FText UK2Node_InterfaceEventBase::GetNodeTitle(ENodeTitleType::Type TitleType) const
 {
     if (!CachedTexts.IsTitleCached(TitleType, this))
@@ -39,10 +45,11 @@ FText UK2Node_InterfaceEventBase::GetTooltipText() const
 void UK2Node_InterfaceEventBase::ValidateNodeDuringCompilation(FCompilerResultsLog& MessageLog) const
 {
     const FEventEntry* FoundEntry = GetEventEntry();
-    if (FoundEntry != nullptr)
+    if (FoundEntry == nullptr)
+    {
+        MessageLog.Error(TEXT("Node @@ contains invalid EventId: @@"), this, *EventId.ToString());
         return;
-
-    // TODO: Report error
+    }
 }
 
 FText UK2Node_InterfaceEventBase::GetMenuCategory() const
@@ -100,12 +107,14 @@ void UK2Node_InterfaceEventBase::CommonAllocateDefaultPins(bool bCreateEventPin,
 
         if (InterfaceClass != nullptr)
         {
-            CreatePin(EGPD_Input, UEdGraphSchema_K2::PC_Interface, InterfaceClass, TEXT("Target"));
+            UEdGraphPin* TargetPin = CreatePin(EGPD_Input, UEdGraphSchema_K2::PC_Interface, InterfaceClass, TargetPinName);
+            TargetPin->PinType.bIsReference = true;
+            TargetPin->PinType.bIsConst = true;
         }
 
         if (bCreateEventPin && DelegateSignature != nullptr)
         {
-            UEdGraphPin* EventPin = CreatePin(EGPD_Input, UEdGraphSchema_K2::PC_Delegate, TEXT("Event"));
+            UEdGraphPin* EventPin = CreatePin(EGPD_Input, UEdGraphSchema_K2::PC_Delegate, EventPinName);
             EventPin->PinType.PinSubCategoryMemberReference.MemberParent = DelegateSignature->GetOuter();
             EventPin->PinType.PinSubCategoryMemberReference.MemberName = DelegateSignature->GetFName();
             EventPin->PinType.bIsReference = true;
@@ -124,6 +133,27 @@ void UK2Node_InterfaceEventBase::CommonExpandNode(FKismetCompilerContext& Compil
 {
     Super::ExpandNode(CompilerContext, SourceGraph);
 
+    auto EnsureConnected = [&](UEdGraphPin* Pin)
+    {
+        const bool bConnected = Pin->HasAnyConnections();
+        if (!bConnected)
+            CompilerContext.MessageLog.Error(TEXT("Pin @@ in node @@ must have an input wired into it"), Pin, this);
+        return bConnected;
+    };
+
+    UEdGraphPin* InTargetPin = FindPin(TargetPinName);
+    UEdGraphPin* InEventPin = FindPin(EventPinName);
+
+    const bool bTargetPinValid = EnsureConnected(InTargetPin);
+    const bool bEventPinValid = InEventPin == nullptr || EnsureConnected(InEventPin);
+
+    if (GetEventEntry() == nullptr || !bTargetPinValid || !bEventPinValid)
+    {
+        // Break links to our input Execute pin to suppress "Unexpected node type ..." messages
+        FindPin(UEdGraphSchema_K2::PN_Execute)->BreakAllPinLinks();
+        return;
+    }
+
     const UEdGraphSchema_K2* Schema = CompilerContext.GetSchema();
 
     // spawn call to requested static event handling function
@@ -132,7 +162,7 @@ void UK2Node_InterfaceEventBase::CommonExpandNode(FKismetCompilerContext& Compil
     EventFunctionCall->AllocateDefaultPins();
 
     // check if we have Event pin
-    if (UEdGraphPin* InEventPin = FindPin(TEXT("Event")))
+    if (InEventPin != nullptr)
     {
         // spawn call to UnpackDelegate static function
         UK2Node_CallFunction* UnpackDelegateCall = CompilerContext.SpawnIntermediateNode<UK2Node_CallFunction>(this, SourceGraph);
@@ -173,7 +203,7 @@ void UK2Node_InterfaceEventBase::CommonExpandNode(FKismetCompilerContext& Compil
     EventFunctionCall->FindPin(TEXT("InEventId"))->DefaultValue = EventId.ToString();
 
     // connect our "Target" pin to AddEventListenerFunction
-    CompilerContext.MovePinLinksToIntermediate(*FindPin(TEXT("Target")), *EventFunctionCall->FindPin(TEXT("InEventOwner")));
+    CompilerContext.MovePinLinksToIntermediate(*InTargetPin, *EventFunctionCall->FindPin(TEXT("InEventOwner")));
 
     // connect our execute pins
     CompilerContext.MovePinLinksToIntermediate(*FindPin(UEdGraphSchema_K2::PN_Execute), *EventFunctionCall->GetExecPin());

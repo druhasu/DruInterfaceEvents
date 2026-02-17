@@ -26,8 +26,7 @@ void UK2Node_InterfaceEventRemoveAll::AllocateDefaultPins()
 FText UK2Node_InterfaceEventRemoveAll::GetNodeTitleForCache(ENodeTitleType::Type TitleType) const
 {
     const FEventEntry* FoundEntry = GetEventEntry();
-    if (FoundEntry == nullptr)
-        return FText::GetEmpty();
+    FText EventDisplayName = FoundEntry != nullptr ? FoundEntry->EventDisplayName : INVTEXT("<Unknown>");
 
-    return FText::Format(INVTEXT("Unbind All Events from {0}"), FoundEntry->EventDisplayName);
+    return FText::Format(INVTEXT("Unbind All Events from {0}"), EventDisplayName);
 }
