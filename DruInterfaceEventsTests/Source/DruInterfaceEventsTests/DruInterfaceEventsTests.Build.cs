@@ -16,8 +16,9 @@ public class DruInterfaceEventsTests : ModuleRules
         PrivateDependencyModuleNames.AddRange(
         [
             "CoreUObject",
-            "DruInterfaceEvents",
             "Engine",
         ]);
+
+        DruInterfaceEvents.Setup(this);
     }
 }

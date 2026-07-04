@@ -53,6 +53,7 @@ public static class InterfaceEventParser
         WriteGeneratedCode(factory);
     }
 
+#if !UE_5_8_OR_LATER
     [UhtExporter(Name = ExporterNameFixup, ModuleName = ModuleName, Options = UhtExporterOptions.Default)]
     public static void FixupGeneratedFileNames(IUhtExportFactory factory)
     {
@@ -65,6 +66,7 @@ public static class InterfaceEventParser
             File.SetLastWriteTime(newFilepath, originalWriteTime);
         }
     }
+#endif
 
     private static List<EventInfo> CollectEvents(IUhtExportFactory factory)
     {
@@ -200,6 +202,15 @@ public static class InterfaceEventParser
     {
         GeneratedFiles.Clear();
 
+#if UE_5_8_OR_LATER
+        var setupModules = FindSetupModules();
+        if (setupModules == null)
+        {
+            factory.Session.LogError($"'{ModuleName}.SetupModules' is not available");
+            return;
+        }
+#endif
+
         foreach (var eventsPerModule in Events.GroupBy(e => e.InterfaceClass.HeaderFile.Module))
         {
             var sortedIncludeFiles = eventsPerModule
@@ -266,13 +277,9 @@ public static class InterfaceEventParser
             sb.AppendLine("    }");
 
 #if UE_5_5_OR_LATER
-            UhtModule module = eventsPerModule.Key;
-            string moduleName = module.Module.Name;
-            string moduleOutputDirectory = module.Module.OutputDirectory;
+            string moduleName = eventsPerModule.Key.ShortName;
 #else
-            UHTManifest.Module module = eventsPerModule.Key;
-            string moduleName = module.Name;
-            string moduleOutputDirectory = module.OutputDirectory;
+            string moduleName = eventsPerModule.Key.Name;
 #endif
 
             sb.Append("} GInterfaceEventsRegistrator_");
@@ -282,8 +289,15 @@ public static class InterfaceEventParser
 
             sb.AppendLine("#endif");
 
-            var outputPath = Path.Combine(moduleOutputDirectory, $"{moduleName}.IEvents.gen.keep");
+            var outputPath = GetNameOfGeneratedFile(eventsPerModule.Key);
             GeneratedFiles.Add(outputPath);
+
+#if UE_5_8_OR_LATER
+            if (!setupModules.Contains(moduleName))
+            {
+                factory.Session.LogError($"Module '{moduleName}' is not setup properly. Make sure to add '{ModuleName}.Setup(this);' into '{moduleName}.Build.cs'");
+            }
+#endif
 
             factory.CommitOutput(outputPath, sb);
         }
@@ -311,4 +325,30 @@ public static class InterfaceEventParser
 #endif
         }
     }
+
+#if UE_5_5_OR_LATER
+    private static string GetNameOfGeneratedFile(UhtModule uhtModule) => GetNameOfGeneratedFile(uhtModule.Module);
+#endif
+
+    private static string GetNameOfGeneratedFile(UHTManifest.Module manifestModule)
+    {
+        string moduleName = manifestModule.Name;
+        string moduleOutputDirectory = manifestModule.OutputDirectory;
+        return Path.Combine(moduleOutputDirectory, $"{moduleName}.IEvents.gen.keep");
+    }
+
+#if UE_5_8_OR_LATER
+    private static List<string>? FindSetupModules()
+    {
+        Type? moduleRules = null;
+        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            moduleRules = asm.GetTypes().FirstOrDefault(t => t.Name == ModuleName);
+            if (moduleRules is not null)
+                break;
+        }
+
+        return moduleRules?.GetProperty("SetupModules", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) as List<string>;
+    }
+#endif
 }

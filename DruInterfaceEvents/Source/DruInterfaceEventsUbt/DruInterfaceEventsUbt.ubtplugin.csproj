@@ -2,9 +2,9 @@
 	<Import Project="DruInterfaceEventsUbt.ubtplugin.csproj.props" Condition="Exists('DruInterfaceEventsUbt.ubtplugin.csproj.props')" />
 	<Import Project="Debug.csproj.props" Condition="Exists('Debug.csproj.props')" />
 	<Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
+	<Import Project="TargetFrameworkDetect.props" />
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
 		<RootNamespace>DruInterfaceEvents</RootNamespace>
 		<ProjectRoot Condition="!Exists('..\..\..\.git')">..\..\..\..</ProjectRoot>
 		<ProjectRoot Condition=" Exists('..\..\..\.git')">..\..\..\..\..</ProjectRoot>

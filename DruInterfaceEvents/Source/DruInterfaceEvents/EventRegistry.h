@@ -2,8 +2,11 @@
 
 #pragma once
 
-#include "UObject/ScriptDelegateFwd.h"
 #include "Containers/Set.h"
+#include "Internationalization/Text.h"
+#include "UObject/ScriptDelegateFwd.h"
+#include "UObject/NameTypes.h"
+#include "UObject/TopLevelAssetPath.h"
 
 struct FEventEntry
 {
@@ -29,9 +32,9 @@ struct FEventEntry
         return A.EventId == B.EventId;
     }
 
-    friend bool operator== (const FEventEntry& A, FName EventId)
+    friend bool operator== (const FEventEntry& A, FName InEventId)
     {
-        return A.EventId == EventId;
+        return A.EventId == InEventId;
     }
 };
 
