@@ -11,7 +11,8 @@ I test this plugin to work with the latest version of Unreal Engine and two vers
 
 1. Download [latest release](https://github.com/druhasu/DruInterfaceEvents/releases)
 2. Extract archive contents into your project `/Plugins/` folder
-3. Generate project files and build
+3. Add `DruInterfaceEvents.Setup(this);` to your .Build.cs file (see [DruInterfaceEventsTests.Build.cs](https://github.com/druhasu/DruInterfaceEvents/blob/master/DruInterfaceEventsTests/Source/DruInterfaceEventsTests/DruInterfaceEventsTests.Build.cs) for example)
+4. Generate project files and build
 
 ## Getting started
 
