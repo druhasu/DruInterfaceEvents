@@ -6,6 +6,7 @@ using UnrealBuildTool;
 public class DruInterfaceEvents : ModuleRules
 {
     public static List<string> SetupModules { get; set; } = [];
+    public static bool RulesCreated { get; set; } = false;
 
     public DruInterfaceEvents(ReadOnlyTargetRules Target) : base(Target)
     {
@@ -21,6 +22,8 @@ public class DruInterfaceEvents : ModuleRules
             "CoreUObject",
             "Engine",
         ]);
+
+        RulesCreated = true;
     }
 
     public static void Setup(ModuleRules module)
